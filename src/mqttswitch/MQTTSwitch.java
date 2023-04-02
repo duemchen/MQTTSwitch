@@ -11,9 +11,9 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.logging.Level;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
+import java.util.logging.Logger;
+
+
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -32,7 +32,8 @@ public class MQTTSwitch implements MqttCallback {
      *
      * @author duemchen
      */
-    private static Logger log = Logger.getLogger("MQTTSwitchLogger");
+    private static final org.apache.logging.log4j.Logger log = org.apache.logging.log4j.LogManager.getLogger();
+  
     private static boolean stop;
 
     MqttAsyncClient client;
@@ -45,7 +46,7 @@ public class MQTTSwitch implements MqttCallback {
     private static long lastPiep = 0;
 
     public MQTTSwitch() {
-        DOMConfigurator.configureAndWatch("log4j.xml", 5 * 1000);
+       
     }
 
     public void register(SwitchCallback callback) {
@@ -240,7 +241,7 @@ public class MQTTSwitch implements MqttCallback {
     }
 
     public static void main(String[] args) {
-        BasicConfigurator.configure();
+        
         if (args.length > 0) {
             if ("start".equals(args[0])) {
                 start(args);
