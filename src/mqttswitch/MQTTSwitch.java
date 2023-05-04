@@ -13,7 +13,6 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -33,7 +32,7 @@ public class MQTTSwitch implements MqttCallback {
      * @author duemchen
      */
     private static final org.apache.logging.log4j.Logger log = org.apache.logging.log4j.LogManager.getLogger();
-  
+
     private static boolean stop;
 
     MqttAsyncClient client;
@@ -46,7 +45,7 @@ public class MQTTSwitch implements MqttCallback {
     private static long lastPiep = 0;
 
     public MQTTSwitch() {
-       
+
     }
 
     public void register(SwitchCallback callback) {
@@ -98,6 +97,12 @@ public class MQTTSwitch implements MqttCallback {
 
     }
 
+    private boolean isNachts() {
+        // 08:00 bis 18:00 Tag
+        // 18:00 bis 08:00 Nacht
+        return HoraTime.imZeitraum("18:00", "08:00");
+    }
+
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         //if ("home/OpenMQTTGateway_ESP32_ALL/433toMQTT".equals(topic)) {
@@ -116,10 +121,6 @@ public class MQTTSwitch implements MqttCallback {
                 MqttMessage echo;
                 boolean gültig = true;
                 switch (i) {
-                    case 7235862://9803110:
-                        echo = new MqttMessage(sd.getBytes());
-                        client.publish("433/teich", echo);
-                        break;
                     case 1228814:
                         echo = new MqttMessage(sd.getBytes());
                         client.publish("433/briefkasten", echo);
@@ -127,7 +128,7 @@ public class MQTTSwitch implements MqttCallback {
 
 //neu // Dümchen 01.08.2020
 //4053766  oben
-//9803110  unten                        
+//9803110  unten                                            
                     case 4053766:
                         //case 14222350:                        
                         echo = new MqttMessage(sd.getBytes());
@@ -142,16 +143,29 @@ public class MQTTSwitch implements MqttCallback {
                         break;
 
                     case 14222350:
-                        echo = new MqttMessage(sd.getBytes());
-                        client.publish("433/oben2", echo);
-                        //System.out.println(new Date() + "    " + topic + ", " + message);
-                        gonge();
+                        if (isNachts()) {
+                            echo = new MqttMessage(sd.getBytes());
+                            client.publish("433/oben2", echo);
+                            //System.out.println(new Date() + "    " + topic + ", " + message);
+                            gonge();
+                        }
                         break;
                     case 1115150:
-                        echo = new MqttMessage(sd.getBytes());
-                        client.publish("433/unten2", echo);
-                        //System.out.println(new Date() + "    " + topic + ", " + message);
-                        gonge();
+                        if (isNachts()) {
+                            echo = new MqttMessage(sd.getBytes());
+                            client.publish("433/unten2", echo);
+                            //System.out.println(new Date() + "    " + topic + ", " + message);
+                            gonge();
+                        }
+                        break;
+                    case 7235862://test ok. Teich, der neue Sensor in der kleinen Stube: // Dümchen 03.05.2023
+                        if (!isNachts()) {
+                            echo = new MqttMessage(sd.getBytes());
+                            //client.publish("433/teich", echo);
+                            client.publish("433/oben2", echo);
+                            //System.out.println(new Date() + "    " + topic + ", " + message);
+                            gonge();
+                        }
                         break;
                     default:
                         gültig = false;
@@ -241,7 +255,7 @@ public class MQTTSwitch implements MqttCallback {
     }
 
     public static void main(String[] args) {
-        
+
         if (args.length > 0) {
             if ("start".equals(args[0])) {
                 start(args);
